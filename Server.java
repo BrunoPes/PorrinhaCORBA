@@ -1,5 +1,5 @@
 import Porrinha.*;
-import org.omg.CosNaming.*; 
+import org.omg.CosNaming.*;
 import org.omg.CORBA.*;
 import org.omg.PortableServer.*;
 import java.util.HashMap;
@@ -15,6 +15,7 @@ public class Server extends ServerPorrinhaPOA {
 
 	public Server(String serverName, int totalPlayers, String args[]) throws Exception {
 		this.totalPlayers = totalPlayers;
+		serverName = serverName.replace(" ", "").toLowerCase();
 
 		ORB orb = ORB.init(args, null);
 		org.omg.CORBA.Object poaPointer = orb.resolve_initial_references("RootPOA");
@@ -52,7 +53,7 @@ public class Server extends ServerPorrinhaPOA {
 	public void putNumberOfPicks(String clientName, int picks) {
 		this.playedPicks.put(clientName, picks);
 
-		if(this.playedPicks.size() == this.totalPlayers) { 
+		if(this.playedPicks.size() == this.totalPlayers) {
 			//Jogadora ja deram os palpites
 			for(ClientPorrinha client : this.clientsObjects.values()) {
 				client.tellResultGuess();

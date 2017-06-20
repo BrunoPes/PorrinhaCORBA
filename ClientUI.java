@@ -3,70 +3,87 @@ import java.awt.event.*;
 import javax.swing.*;
 
 class ClientUI extends JFrame implements MouseListener, KeyListener, WindowListener {
+	private Client clientCorba;
 
 	private JButton connectButton = new JButton("Conectar");
 	private JTextField userName = new JTextField();
 	private JTextField hostName = new JTextField();
 
-	public ClientUI(int width, int height) {
+	public ClientUI(String[] args, int width, int height) {
+		this.clientCorba = new Client(args);
 		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         this.setBounds(100, 100, width, height);
         this.getContentPane().setLayout(null);
         this.setResizable(false);
         this.addWindowListener(this);
 
-
-		
         JPanel connectionFields = new JPanel();
         connectionFields.setLayout(new BoxLayout(connectionFields, BoxLayout.X_AXIS));
         connectionFields.setAlignmentY(Component.CENTER_ALIGNMENT);
         connectionFields.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
         connectionFields.setBackground(Color.WHITE);
-        connectionFields.setBounds(0,0,width-6,40);
-        
+        connectionFields.setBounds(0,0,width-1,40);
+
 		JLabel lblName = new JLabel("Nome:");
-		lblName.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 15));
+		lblName.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 5));
 		JLabel lblHost = new JLabel("Host:");
-		lblHost.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 15));
-        this.userName.setMaximumSize(new Dimension(90, 20));
-        // this.hostName.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 15));
-		this.hostName.setMaximumSize(new Dimension(90, 20));
-		// this.hostName.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 15));
-        this.connectButton.setMaximumSize(new Dimension(90, 20));
+		lblHost.setBorder(BorderFactory.createEmptyBorder(0, 20, 0, 5));
+        this.userName.setMaximumSize(new Dimension(150, 20));
+		this.hostName.setMaximumSize(new Dimension(150, 20));
+        this.connectButton.setMaximumSize(new Dimension(85, 20));
         this.connectButton.addMouseListener(this);
 
         connectionFields.add(lblName);
         connectionFields.add(this.userName);
         connectionFields.add(lblHost);
         connectionFields.add(this.hostName);
+		connectionFields.add(new JLabel("   "));
         connectionFields.add(this.connectButton);
 
         this.getContentPane().add(connectionFields);
 		this.setVisible(true);
 	}
 
-	public void keyPressed(KeyEvent key) {
-        try {
-            int keyCode = key.getKeyCode();
-            switch(keyCode) {
-            	case 0: break;
-            	default: break;
-            }
-        } catch(Exception e) {
-        	e.printStackTrace();
-        }
-    }
 
-    public void mousePressed(MouseEvent e) {
-        try {
-            // if(e.getSource() instanceof JButton) {
-            //     JButton button = (JButton)e.getSource();
-           	// }
-        } catch(Exception exc) {
-        	exc.printStackTrace();
-        }
-    }
+	/** Communication interface methods **/
+	public void tellNumberOfPicks(Server server) {
+		int picks;
+		try {
+			System.out.print("Escolha o número de palitos: ");
+			picks = this.scanner.nextInt();
+			while(picks > this.myPicks) {
+				System.out.println("Você só tem " + this.myPicks + ".");
+				System.out.print("Dê uma quantidade de palitos válida: ");
+				picks = this.scanner.nextInt();
+			}
 
+			if(picks <= this.myPicks) server.putNumberOfPicks(this.myName, picks);
+		} catch(NumberFormatException e) {
+			System.out.println("Escreva apenas números inteiros de 0 a " + this.myPicks);
+		}
+	}
+
+	public void tellResultGuess(Server server) {
+		try {
+			System.out.println("Dê seu palpite do resultado: ");
+			this.lastGuess = this.scanner.nextInt();
+			while(this.lastGuess > this.maxPicksSum ) {
+				System.out.println("A soma máxima de palitos é " + this.maxPicksSum);
+				System.out.println("Dê outro palpite: ");
+				this.lastGuess = this.scanner.nextInt();
+			}
+			server.putResultGuess(this.myName, this.lastGuess);
+		} catch(NumberFormatException e) {
+			System.out.println("Escreva apenas números inteiros de 0 a " + this.maxPicksSum);
+		}
+	}
+
+	public void roundFinished(int result, int maxSum) {
+		this.maxPicksSum = maxSum;
+		if(this.lastGuess == result) this.myPicks--;
+	}
+
+	/** Listeners **/
 	public void windowClosing(WindowEvent e) {
 		System.out.println("Closing Window");
         // if(!this.connect.isEnabled()) {
@@ -75,15 +92,49 @@ class ClientUI extends JFrame implements MouseListener, KeyListener, WindowListe
         // }
     }
 
-    public void keyReleased(KeyEvent e) {}    
-    public void keyTyped(KeyEvent e) {}
+	public void keyPressed(KeyEvent key) {
+		try {
+			int keyCode = key.getKeyCode();
+			switch(keyCode) {
+				case 0: break;
+				default: break;
+			}
+		} catch(Exception e) {
+			e.printStackTrace();
+		}
+	}
 
+    public void mousePressed(MouseEvent e) {
+        try {
+            if(e.getSource() instanceof JButton) {
+                JButton button = (JButton)e.getSource();
+
+				switch(button.getText()) {
+					case "Conectar":
+						System.out.println("Connect to server");
+						String client = this.userName.getText();
+						String host = this.hostName.getText();
+						if(client.length() > 0 && host.length() > 0) {
+							host = host.replace(" ", "").toLowerCase();
+							client = client.replace(" ", "");
+							this.userName.setText(client);
+							this.hostName.setText(host);
+							this.clientCorba.setClientAndServer(client, host);
+						}
+						break;
+				}
+			}
+        } catch(Exception exc) {
+        	exc.printStackTrace();
+        }
+    }
+
+    public void keyReleased(KeyEvent e) {}
+    public void keyTyped(KeyEvent e) {}
     public void mouseEntered(MouseEvent e) {}
     public void mouseExited(MouseEvent e) {}
     public void mouseClicked(MouseEvent e) {}
     public void mouseReleased(MouseEvent e) {}
-    
-	//Window Events
     public void windowActivated(WindowEvent e) {}
     public void windowClosed(WindowEvent e) {}
     public void windowDeactivated(WindowEvent e) {}
@@ -94,14 +145,14 @@ class ClientUI extends JFrame implements MouseListener, KeyListener, WindowListe
     public static void main(String args[]) {
     	if(args.length >= 2) {
     		try {
-	    		int width = Integer.valueOf(args[0]);
+				int width = Integer.valueOf(args[0]);
 	    		int height = Integer.valueOf(args[1]);
-				new ClientUI(width, height);
+				new ClientUI(args, width, height);
     		} catch(NumberFormatException e) {
     			e.printStackTrace();
     		}
     	} else {
-    		new ClientUI(450, 300);
+    		new ClientUI(args, 450, 300);
     	}
     }
 }
