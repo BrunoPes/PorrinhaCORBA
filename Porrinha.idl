@@ -1,0 +1,13 @@
+module Porrinha{
+	interface ServerPorrinha {
+		void registerClient(in string clientName);
+		void putNumberOfPicks(in string clientName, in long picks);
+		void putResultGuess(in string clientName, in long guess);
+	};
+
+	interface ClientPorrinha {
+		void tellNumberOfPicks();
+		void tellResultGuess();
+		void roundFinished(in long result, in long maxSum);
+	};
+};
