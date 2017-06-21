@@ -2,14 +2,12 @@ import Porrinha.*;
 import org.omg.CosNaming.*;
 import org.omg.CORBA.*;
 import org.omg.PortableServer.*;
-import java.util.Scanner;
 
 public class Client extends ClientPorrinhaPOA {
 	private int myPicks = 3;
 	private int lastGuess;
 	private int maxPicksSum;
 	private String myName;
-	// private Scanner scanner = new Scanner(System.in);
 	private ClientUI clientUI;
 
 	private ORB orb;
@@ -58,8 +56,24 @@ public class Client extends ClientPorrinhaPOA {
 		this.startConnection();
 	}
 
+	public ServerPorrinha getServer() {
+		return this.server;
+	}
+
 	public int getLastGuess() {
 		return this.lastGuess;
+	}
+
+	public int getMyPicks() {
+		return this.myPicks;
+	}
+
+	public int getMaxPicks() {
+		return this.maxPicksSum;
+	}
+
+	public String getName() {
+		return this.myName;
 	}
 
 	public void setLastGuess(int guess) {
@@ -70,12 +84,17 @@ public class Client extends ClientPorrinhaPOA {
 		this.myPicks = picks;
 	}
 
+	// CORBA Interface Protocol Methods
+	public void waitForStart() {
+		this.clientUI.controlMessage(0);
+	}
+
 	public void tellNumberOfPicks() {
-		this.clientUI.tellNumberOfPicks(this.server, this.myPicks);
+		this.clientUI.controlMessage(1);
 	}
 
 	public void tellResultGuess() {
-		this.clientUI.tellResultGuess(this.server, this.maxPicksSum);
+		this.clientUI.controlMessage(2);
 	}
 
 	public void roundFinished(int result, int maxSum) {

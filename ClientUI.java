@@ -13,6 +13,7 @@ class ClientUI extends JFrame implements MouseListener, KeyListener, WindowListe
 	private JTextField hostName = new JTextField();
 	private JTextField picks = new JTextField();
 	private JTextField guess = new JTextField();
+	private JLabel controlText = new JLabel("Entre em uma sala!");
 
 	public ClientUI(String[] args, int width, int height) {
 		this.clientCorba = new Client(args);
@@ -50,8 +51,7 @@ class ClientUI extends JFrame implements MouseListener, KeyListener, WindowListe
         gameFields.setAlignmentX(Component.LEFT_ALIGNMENT);
         gameFields.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
         gameFields.setBackground(Color.WHITE);
-        gameFields.setBounds((width/5),41,(3*width)/5, 229);
-
+        gameFields.setBounds(0,41,(3*width)/5, 250);
 
         JPanel picksFields = new JPanel();
         picksFields.setLayout(new BoxLayout(picksFields, BoxLayout.X_AXIS));
@@ -63,27 +63,35 @@ class ClientUI extends JFrame implements MouseListener, KeyListener, WindowListe
         guessFields.setBackground(Color.WHITE);
         guessFields.setBounds(0,200,(3*width)/5, 100);
         guessFields.setMaximumSize(new Dimension((3*width)/5, 30));
-        this.picks.setMaximumSize(new Dimension(70, 16));
-        this.guess.setMaximumSize(new Dimension(70, 16));
-        this.putPicksBtn.setMaximumSize(new Dimension(100, 16));
+        this.picks.setMaximumSize(new Dimension(40, 16));
+        this.guess.setMaximumSize(new Dimension(40, 16));
+        this.putPicksBtn.setMaximumSize(new Dimension(85, 19));
         this.putPicksBtn.addMouseListener(this);
-        this.putGuessBtn.setMaximumSize(new Dimension(100, 16));
+        this.putGuessBtn.setMaximumSize(new Dimension(85, 19));
         this.putGuessBtn.addMouseListener(this);
         JLabel gapBetween = new JLabel("");
-        gapBetween.setMaximumSize(new Dimension(60, 10));
+        gapBetween.setMaximumSize(new Dimension(50, 10));
         JLabel gapBetween2 = new JLabel("");
-        gapBetween2.setMaximumSize(new Dimension(60, 10));
+        gapBetween2.setMaximumSize(new Dimension(50, 10));
         JLabel gap = new JLabel("");
         gap.setMaximumSize(new Dimension((3*width)/5, 15));
 
+		Font newFont = (this.controlText.getFont()).deriveFont((float)20);
+		this.controlText.setFont(newFont);
+		this.controlText.setMaximumSize(new Dimension((3*width)/5, 50));
+		this.controlText.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+		picksFields.add(new JLabel("  "));
         picksFields.add(new JLabel("Palitos    "));
         picksFields.add(this.picks);
         picksFields.add(gapBetween);
         picksFields.add(this.putPicksBtn);
+		guessFields.add(new JLabel("  "));
         guessFields.add(new JLabel("Palpite    "));
         guessFields.add(this.guess);
         guessFields.add(gapBetween2);
         guessFields.add(this.putGuessBtn);
+		gameFields.add(this.controlText);
         gameFields.add(picksFields);
         gameFields.add(guessFields);
 
@@ -92,44 +100,71 @@ class ClientUI extends JFrame implements MouseListener, KeyListener, WindowListe
 		this.setVisible(true);
 	}
 
+	private void connectToServer() {
+		System.out.println("Connect to server");
+		String client = this.userName.getText();
+		String host = this.hostName.getText();
+		if(client.length() > 0 && host.length() > 0) {
+			host = host.replace(" ", "").toLowerCase();
+			client = client.replace(" ", "");
+			this.userName.setText(client);
+			this.hostName.setText(host);
 
-	/** Communication interface methods **/
-	public void tellNumberOfPicks(ServerPorrinha server, int myPicks) {
-		int picks = 0;
-		try {
-			System.out.print("Escolha o número de palitos: ");
-			// picks = this.scanner.nextInt();
-			while(picks > myPicks) {
-				System.out.println("Você só tem " + myPicks + ".");
-				System.out.print("Dê uma quantidade de palitos válida: ");
-				// picks = this.scanner.nextInt();
+			try {
+				this.clientCorba.setClientAndServer(client, host);
+			} catch(Exception e) {
+				e.printStackTrace();
 			}
-
-			if(picks <= myPicks) server.putNumberOfPicks(this.userName.getText(), picks);
-		} catch(NumberFormatException e) {
-			System.out.println("Escreva apenas números inteiros de 0 a " + myPicks);
 		}
 	}
 
-	public void tellResultGuess(ServerPorrinha server, int maxPicksSum) {
+	public void controlMessage(int control) {
+		switch(control) {
+			case 0:
+				this.controlText.setText("Esperando a partida começar...");
+				break;
+			case 1:
+				this.controlText.setText("Escolha seus palitos!");
+				break;
+			case 2:
+				this.controlText.setText("Dê o seu palpite!");
+				break;
+		}
+	}
+
+	/** Communication interface methods **/
+	public void tellNumberOfPicks(ServerPorrinha server, int myPicks) {
 		try {
-			int lastGuess = this.clientCorba.getLastGuess();
-			System.out.println("Dê seu palpite do resultado: ");
-			// lastGuess = this.scanner.nextInt();
-			while(lastGuess > maxPicksSum ) {
-				System.out.println("A soma máxima de palitos é " + maxPicksSum);
-				System.out.println("Dê outro palpite: ");
-				// lastGuess = this.scanner.nextInt();
+			int picksNum = Integer.valueOf(this.picks.getText());
+			if(picksNum > myPicks) {
+				this.controlText.setText("Você só tem " + myPicks + " palitos");
+			} else {
+				server.putNumberOfPicks(this.userName.getText(), picksNum);
 			}
-			this.clientCorba.setLastGuess(lastGuess);
-			server.putResultGuess(this.userName.getText(), lastGuess);
 		} catch(NumberFormatException e) {
-			System.out.println("Escreva apenas números inteiros de 0 a " + maxPicksSum);
+			String msg = "Escreva apenas números inteiros de 0 a " + myPicks;
+			JOptionPane.showMessageDialog(this, null, msg, JOptionPane.WARNING_MESSAGE);
+		}
+	}
+
+	public void tellResultGuess(ServerPorrinha server, int maxPicks) {
+		try {
+			int lastGuess = Integer.valueOf(this.guess.getText());
+			if(lastGuess > maxPicks) {
+				this.controlText.setText("Maior palpite possível é: " + maxPicks);
+			} else {
+				this.clientCorba.setLastGuess(lastGuess);
+				server.putResultGuess(this.clientCorba.getName(), lastGuess);
+				this.controlText.setText("Aguardando Resultado...");
+			}
+		} catch(NumberFormatException e) {
+			String msg = "Escreva apenas números inteiros de 0 a " + maxPicks;
+			JOptionPane.showMessageDialog(this, null, msg, JOptionPane.WARNING_MESSAGE);
 		}
 	}
 
 	public void roundFinished(int result, int maxSum) {
-		
+
 	}
 
 	/** Listeners **/
@@ -157,19 +192,21 @@ class ClientUI extends JFrame implements MouseListener, KeyListener, WindowListe
         try {
             if(e.getSource() instanceof JButton) {
                 JButton button = (JButton)e.getSource();
+				ServerPorrinha server = this.clientCorba.getServer();
+				int picksArray[] = {
+					this.clientCorba.getMyPicks(),
+					this.clientCorba.getMaxPicks()
+				};
 
 				switch(button.getText()) {
 					case "Conectar":
-						System.out.println("Connect to server");
-						String client = this.userName.getText();
-						String host = this.hostName.getText();
-						if(client.length() > 0 && host.length() > 0) {
-							host = host.replace(" ", "").toLowerCase();
-							client = client.replace(" ", "");
-							this.userName.setText(client);
-							this.hostName.setText(host);
-							this.clientCorba.setClientAndServer(client, host);
-						}
+						this.connectToServer();
+						break;
+					case "Escolher":
+						this.tellNumberOfPicks(server, picksArray[0]);
+						break;
+					case "Dar palpite":
+						this.tellResultGuess(server, picksArray[1]);
 						break;
 				}
 			}
@@ -192,16 +229,16 @@ class ClientUI extends JFrame implements MouseListener, KeyListener, WindowListe
     public void windowOpened(WindowEvent e) {}
 
     public static void main(String args[]) {
-    	if(args.length >= 2) {
-    		try {
-				int width = Integer.valueOf(args[0]);
-	    		int height = Integer.valueOf(args[1]);
-				new ClientUI(args, width, height);
-    		} catch(NumberFormatException e) {
-    			e.printStackTrace();
-    		}
-    	} else {
-    		new ClientUI(args, 450, 300);
-    	}
+    	// if(args.length >= 2) {
+    	// 	try {
+		// 		int width = Integer.valueOf(args[0]);
+	    // 		int height = Integer.valueOf(args[1]);
+		// 		new ClientUI(args, width, height);
+    	// 	} catch(NumberFormatException e) {
+    	// 		e.printStackTrace();
+    	// 	}
+    	// } else {
+		// }
+    	new ClientUI(args, 450, 300);
     }
 }

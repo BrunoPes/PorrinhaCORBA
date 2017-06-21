@@ -39,9 +39,16 @@ public class Server extends ServerPorrinhaPOA {
 			ClientPorrinha newClient = ClientPorrinhaHelper.narrow(this.namingService.resolve(clientNameComp));
 
 			if(this.clientsObjects.putIfAbsent(clientName, newClient) == null) {
-				System.out.println("Waiting for " + clientName + " answer");
+				System.out.println("Player " + clientName + " has joined the room");
 				this.clientsPicks.put(clientName, new Integer(3));
-				// newClient.tellNumberOfPicks();
+
+				if(this.clientsObjects.size() == this.totalPlayers) {
+					for(ClientPorrinha client : this.clientsObjects.values()) {
+						client.tellNumberOfPicks();
+					}
+				} else {
+					newClient.waitForStart();
+				}
 			} else {
 				//Ja tinha esse client?
 			}
@@ -54,7 +61,7 @@ public class Server extends ServerPorrinhaPOA {
 		this.playedPicks.put(clientName, picks);
 
 		if(this.playedPicks.size() == this.totalPlayers) {
-			//Jogadora ja deram os palpites
+			//Jogadores ja deram os palpites
 			for(ClientPorrinha client : this.clientsObjects.values()) {
 				client.tellResultGuess();
 			}

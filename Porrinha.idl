@@ -9,5 +9,6 @@ module Porrinha{
 		void tellNumberOfPicks();
 		void tellResultGuess();
 		void roundFinished(in long result, in long maxSum);
+		void waitForStart();
 	};
 };
