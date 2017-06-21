@@ -1,3 +1,4 @@
+import Porrinha.*;
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
@@ -5,9 +6,13 @@ import javax.swing.*;
 class ClientUI extends JFrame implements MouseListener, KeyListener, WindowListener {
 	private Client clientCorba;
 
+	private JButton putPicksBtn = new JButton("Escolher");
+	private JButton putGuessBtn = new JButton("Dar palpite");
 	private JButton connectButton = new JButton("Conectar");
 	private JTextField userName = new JTextField();
 	private JTextField hostName = new JTextField();
+	private JTextField picks = new JTextField();
+	private JTextField guess = new JTextField();
 
 	public ClientUI(String[] args, int width, int height) {
 		this.clientCorba = new Client(args);
@@ -40,47 +45,91 @@ class ClientUI extends JFrame implements MouseListener, KeyListener, WindowListe
 		connectionFields.add(new JLabel("   "));
         connectionFields.add(this.connectButton);
 
+        JPanel gameFields = new JPanel();
+        gameFields.setLayout(new BoxLayout(gameFields, BoxLayout.Y_AXIS));
+        gameFields.setAlignmentX(Component.LEFT_ALIGNMENT);
+        gameFields.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
+        gameFields.setBackground(Color.WHITE);
+        gameFields.setBounds((width/5),41,(3*width)/5, 229);
+
+
+        JPanel picksFields = new JPanel();
+        picksFields.setLayout(new BoxLayout(picksFields, BoxLayout.X_AXIS));
+        picksFields.setBackground(Color.WHITE);
+        picksFields.setBounds(0,0,(3*width)/5,  100);
+        picksFields.setMaximumSize(new Dimension((3*width)/5, 30));
+        JPanel guessFields = new JPanel();
+        guessFields.setLayout(new BoxLayout(guessFields, BoxLayout.X_AXIS));
+        guessFields.setBackground(Color.WHITE);
+        guessFields.setBounds(0,200,(3*width)/5, 100);
+        guessFields.setMaximumSize(new Dimension((3*width)/5, 30));
+        this.picks.setMaximumSize(new Dimension(70, 16));
+        this.guess.setMaximumSize(new Dimension(70, 16));
+        this.putPicksBtn.setMaximumSize(new Dimension(100, 16));
+        this.putPicksBtn.addMouseListener(this);
+        this.putGuessBtn.setMaximumSize(new Dimension(100, 16));
+        this.putGuessBtn.addMouseListener(this);
+        JLabel gapBetween = new JLabel("");
+        gapBetween.setMaximumSize(new Dimension(60, 10));
+        JLabel gapBetween2 = new JLabel("");
+        gapBetween2.setMaximumSize(new Dimension(60, 10));
+        JLabel gap = new JLabel("");
+        gap.setMaximumSize(new Dimension((3*width)/5, 15));
+
+        picksFields.add(new JLabel("Palitos    "));
+        picksFields.add(this.picks);
+        picksFields.add(gapBetween);
+        picksFields.add(this.putPicksBtn);
+        guessFields.add(new JLabel("Palpite    "));
+        guessFields.add(this.guess);
+        guessFields.add(gapBetween2);
+        guessFields.add(this.putGuessBtn);
+        gameFields.add(picksFields);
+        gameFields.add(guessFields);
+
         this.getContentPane().add(connectionFields);
+        this.getContentPane().add(gameFields);
 		this.setVisible(true);
 	}
 
 
 	/** Communication interface methods **/
-	public void tellNumberOfPicks(Server server) {
-		int picks;
+	public void tellNumberOfPicks(ServerPorrinha server, int myPicks) {
+		int picks = 0;
 		try {
 			System.out.print("Escolha o número de palitos: ");
-			picks = this.scanner.nextInt();
-			while(picks > this.myPicks) {
-				System.out.println("Você só tem " + this.myPicks + ".");
+			// picks = this.scanner.nextInt();
+			while(picks > myPicks) {
+				System.out.println("Você só tem " + myPicks + ".");
 				System.out.print("Dê uma quantidade de palitos válida: ");
-				picks = this.scanner.nextInt();
+				// picks = this.scanner.nextInt();
 			}
 
-			if(picks <= this.myPicks) server.putNumberOfPicks(this.myName, picks);
+			if(picks <= myPicks) server.putNumberOfPicks(this.userName.getText(), picks);
 		} catch(NumberFormatException e) {
-			System.out.println("Escreva apenas números inteiros de 0 a " + this.myPicks);
+			System.out.println("Escreva apenas números inteiros de 0 a " + myPicks);
 		}
 	}
 
-	public void tellResultGuess(Server server) {
+	public void tellResultGuess(ServerPorrinha server, int maxPicksSum) {
 		try {
+			int lastGuess = this.clientCorba.getLastGuess();
 			System.out.println("Dê seu palpite do resultado: ");
-			this.lastGuess = this.scanner.nextInt();
-			while(this.lastGuess > this.maxPicksSum ) {
-				System.out.println("A soma máxima de palitos é " + this.maxPicksSum);
+			// lastGuess = this.scanner.nextInt();
+			while(lastGuess > maxPicksSum ) {
+				System.out.println("A soma máxima de palitos é " + maxPicksSum);
 				System.out.println("Dê outro palpite: ");
-				this.lastGuess = this.scanner.nextInt();
+				// lastGuess = this.scanner.nextInt();
 			}
-			server.putResultGuess(this.myName, this.lastGuess);
+			this.clientCorba.setLastGuess(lastGuess);
+			server.putResultGuess(this.userName.getText(), lastGuess);
 		} catch(NumberFormatException e) {
-			System.out.println("Escreva apenas números inteiros de 0 a " + this.maxPicksSum);
+			System.out.println("Escreva apenas números inteiros de 0 a " + maxPicksSum);
 		}
 	}
 
 	public void roundFinished(int result, int maxSum) {
-		this.maxPicksSum = maxSum;
-		if(this.lastGuess == result) this.myPicks--;
+		
 	}
 
 	/** Listeners **/

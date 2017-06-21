@@ -58,15 +58,30 @@ public class Client extends ClientPorrinhaPOA {
 		this.startConnection();
 	}
 
+	public int getLastGuess() {
+		return this.lastGuess;
+	}
+
+	public void setLastGuess(int guess) {
+		this.lastGuess = guess;
+	}
+
+	public void setMyPicks(int picks) {
+		this.myPicks = picks;
+	}
+
 	public void tellNumberOfPicks() {
-		this.clientUI.tellNumberOfPicks(this.server);
+		this.clientUI.tellNumberOfPicks(this.server, this.myPicks);
 	}
 
 	public void tellResultGuess() {
-		this.clientUI.tellResultGuess(this.server);
+		this.clientUI.tellResultGuess(this.server, this.maxPicksSum);
 	}
 
 	public void roundFinished(int result, int maxSum) {
+		this.maxPicksSum = maxSum;
+		if(this.lastGuess == result) this.myPicks--;
+
 		this.clientUI.roundFinished(result, maxSum);
 	}
 

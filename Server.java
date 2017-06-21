@@ -41,7 +41,7 @@ public class Server extends ServerPorrinhaPOA {
 			if(this.clientsObjects.putIfAbsent(clientName, newClient) == null) {
 				System.out.println("Waiting for " + clientName + " answer");
 				this.clientsPicks.put(clientName, new Integer(3));
-				newClient.tellNumberOfPicks();
+				// newClient.tellNumberOfPicks();
 			} else {
 				//Ja tinha esse client?
 			}
