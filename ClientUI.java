@@ -113,6 +113,7 @@ class ClientUI extends JFrame implements MouseListener, KeyListener, WindowListe
 			try {
 				this.clientCorba.setClientUI(this);
 				this.clientCorba.setClientAndServer(client, host);
+				System.out.println("AQUIIIIIII!!!!!!");
 			} catch(Exception e) {
 				e.printStackTrace();
 			}
@@ -203,17 +204,20 @@ class ClientUI extends JFrame implements MouseListener, KeyListener, WindowListe
 					this.clientCorba.getMaxPicks()
 				};
 
+				System.out.println("Entering Switch!");
 				switch(button.getText()) {
 					case "Conectar":
-						this.connectToServer();
-						break;
+						this.connectToServer(); return;
 					case "Escolher":
 						this.tellNumberOfPicks(server, picksArray[0]);
 						break;
 					case "Dar palpite":
 						this.tellResultGuess(server, picksArray[1]);
 						break;
+					default: break;
 				}
+
+				System.out.println("Leaving Switch!");
 			}
         } catch(Exception exc) {
         	exc.printStackTrace();
