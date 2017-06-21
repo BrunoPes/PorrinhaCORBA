@@ -28,7 +28,7 @@ public class Server extends ServerPorrinhaPOA {
 		this.namingService.rebind(new NameComponent[]{new NameComponent(serverName, "")}, objRef);
 
 		rootPOA.the_POAManager().activate();
-		System.out.println("Servidor Pronto ...");
+		System.out.println("Servidor " + serverName +" Lançado...");
 
 		orb.run();
 	}

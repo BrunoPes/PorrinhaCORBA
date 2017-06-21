@@ -111,6 +111,7 @@ class ClientUI extends JFrame implements MouseListener, KeyListener, WindowListe
 			this.hostName.setText(host);
 
 			try {
+				this.clientCorba.setClientUI(this);
 				this.clientCorba.setClientAndServer(client, host);
 			} catch(Exception e) {
 				e.printStackTrace();
@@ -130,6 +131,8 @@ class ClientUI extends JFrame implements MouseListener, KeyListener, WindowListe
 				this.controlText.setText("Dê o seu palpite!");
 				break;
 		}
+		System.out.println("Controle cod: " + control);
+		this.controlText.updateUI();
 	}
 
 	/** Communication interface methods **/
@@ -138,6 +141,7 @@ class ClientUI extends JFrame implements MouseListener, KeyListener, WindowListe
 			int picksNum = Integer.valueOf(this.picks.getText());
 			if(picksNum > myPicks) {
 				this.controlText.setText("Você só tem " + myPicks + " palitos");
+				this.controlText.updateUI();
 			} else {
 				server.putNumberOfPicks(this.userName.getText(), picksNum);
 			}
@@ -157,6 +161,7 @@ class ClientUI extends JFrame implements MouseListener, KeyListener, WindowListe
 				server.putResultGuess(this.clientCorba.getName(), lastGuess);
 				this.controlText.setText("Aguardando Resultado...");
 			}
+			this.controlText.updateUI();
 		} catch(NumberFormatException e) {
 			String msg = "Escreva apenas números inteiros de 0 a " + maxPicks;
 			JOptionPane.showMessageDialog(this, null, msg, JOptionPane.WARNING_MESSAGE);

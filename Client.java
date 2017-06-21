@@ -38,6 +38,10 @@ public class Client extends ClientPorrinhaPOA {
 		this.namingService.rebind(new NameComponent[]{new NameComponent(this.myName, "")}, clientPointer);
 	}
 
+	public void setClientUI(ClientUI userInterface) {
+		this.clientUI = userInterface;
+	}
+
 	public void setServer(String serverName) throws Exception {
 		org.omg.CORBA.Object serverPointer = this.namingService.resolve(new NameComponent[]{new NameComponent(serverName, "")});
 		this.server = ServerPorrinhaHelper.narrow(serverPointer);
