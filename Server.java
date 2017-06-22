@@ -11,6 +11,7 @@ public class Server extends ServerPorrinhaPOA {
 	private Map<String, Integer> clientsPicks = new HashMap<String, Integer>();
 	private Map<String, ClientPorrinha> clientsObjects = new HashMap<String, ClientPorrinha>();
 	private int totalPlayers;
+	private int maxSum;
 	private NamingContext namingService;
 
 	public Server(String serverName, int totalPlayers, String args[]) throws Exception {
@@ -43,6 +44,7 @@ public class Server extends ServerPorrinhaPOA {
 				this.clientsPicks.put(clientName, new Integer(3));
 
 				if(this.clientsObjects.size() == this.totalPlayers) {
+					this.maxSum = this.totalPlayers * 3;
 					for(ClientPorrinha client : this.clientsObjects.values()) {
 						client.tellNumberOfPicks();
 					}
@@ -61,9 +63,8 @@ public class Server extends ServerPorrinhaPOA {
 		this.playedPicks.put(clientName, picks);
 
 		if(this.playedPicks.size() == this.totalPlayers) {
-			//Jogadores ja deram os palpites
 			for(ClientPorrinha client : this.clientsObjects.values()) {
-				client.tellResultGuess();
+				client.tellResultGuess(this.maxSum);
 			}
 		}
 	}
@@ -72,9 +73,7 @@ public class Server extends ServerPorrinhaPOA {
 		this.guessedPicks.put(clientName, guess);
 
 		if(this.guessedPicks.size() == this.totalPlayers) {
-			int maxSum = 0;
 			int totalSum = 0;
-			// ArrayList<String> winners = new ArrayList<String>();
 
 			for(int picks : this.playedPicks.values()) {
 				totalSum += picks;
@@ -84,24 +83,22 @@ public class Server extends ServerPorrinhaPOA {
 				int guessed = (int) entry.getValue();
 				String playerName = (String) entry.getKey();
 				if(guessed == totalSum) {
-					// winners.add(playerName);
-					Integer newPicks = this.clientsPicks.get(playerName) - 1;
+					Integer newPicks = ((int)this.clientsPicks.get(playerName)) - 1;
 					this.clientsPicks.put(playerName, newPicks);
 				}
 
-				maxSum += this.clientsPicks.get(playerName);
+				System.out.println(playerName + ": " +  ((int)this.clientsPicks.get(playerName)));
+				this.maxSum += this.clientsPicks.get(playerName);
 			}
 
 			for(Map.Entry<String, ClientPorrinha> entry : this.clientsObjects.entrySet()) {
 				String playerName = entry.getKey();
 				ClientPorrinha client = entry.getValue();
-				client.roundFinished(totalSum, maxSum);
-				// ClientPorrinha client = (ClientPorrinha)this.clientsObjects.get(playerName);
-				// for(String winner : winners) {
-				// 	if(playerName.equals(winner)) {
-				// 	}
-				// }
+				client.roundFinished(totalSum, this.maxSum);
 			}
+
+			this.playedPicks.clear();
+			this.guessedPicks.clear();
 		}
 	}
 

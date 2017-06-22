@@ -7,7 +7,7 @@ module Porrinha{
 
 	interface ClientPorrinha {
 		void tellNumberOfPicks();
-		void tellResultGuess();
+		void tellResultGuess(in long maxSum);
 		void roundFinished(in long result, in long maxSum);
 		void waitForStart();
 	};

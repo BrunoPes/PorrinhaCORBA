@@ -5,6 +5,7 @@ import javax.swing.*;
 
 class ClientUI extends JFrame implements MouseListener, KeyListener, WindowListener {
 	private Client clientCorba;
+	private ClientThread cliThread;
 
 	private JButton putPicksBtn = new JButton("Escolher");
 	private JButton putGuessBtn = new JButton("Dar palpite");
@@ -16,7 +17,9 @@ class ClientUI extends JFrame implements MouseListener, KeyListener, WindowListe
 	private JLabel controlText = new JLabel("Entre em uma sala!");
 
 	public ClientUI(String[] args, int width, int height) {
-		this.clientCorba = new Client(args);
+		this.cliThread = new ClientThread(args);
+		this.clientCorba = this.cliThread.getClientCorba();
+
 		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         this.setBounds(100, 100, width, height);
         this.getContentPane().setLayout(null);
@@ -111,9 +114,10 @@ class ClientUI extends JFrame implements MouseListener, KeyListener, WindowListe
 			this.hostName.setText(host);
 
 			try {
-				this.clientCorba.setClientUI(this);
-				this.clientCorba.setClientAndServer(client, host);
-				System.out.println("AQUIIIIIII!!!!!!");
+				// this.clientCorba.setClientUI(this);
+				// this.clientCorba.setClientAndServer(client, host);
+				this.cliThread.configClientCorba(client, host, this);
+				this.cliThread.start();
 			} catch(Exception e) {
 				e.printStackTrace();
 			}
@@ -121,6 +125,7 @@ class ClientUI extends JFrame implements MouseListener, KeyListener, WindowListe
 	}
 
 	public void controlMessage(int control) {
+		System.out.println("Control in: " + control);
 		switch(control) {
 			case 0:
 				this.controlText.setText("Esperando a partida começar...");
@@ -132,7 +137,6 @@ class ClientUI extends JFrame implements MouseListener, KeyListener, WindowListe
 				this.controlText.setText("Dê o seu palpite!");
 				break;
 		}
-		System.out.println("Controle cod: " + control);
 		this.controlText.updateUI();
 	}
 
@@ -170,7 +174,7 @@ class ClientUI extends JFrame implements MouseListener, KeyListener, WindowListe
 	}
 
 	public void roundFinished(int result, int maxSum) {
-
+		this.controlMessage(1);
 	}
 
 	/** Listeners **/
