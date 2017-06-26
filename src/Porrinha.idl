@@ -5,10 +5,12 @@ module Porrinha{
 		void putResultGuess(in string clientName, in long guess);
 	};
 
+	typedef sequence<string> names;
 	interface ClientPorrinha {
+		void tellPlayersNames(in names players, in long length);
 		void tellNumberOfPicks();
 		void tellResultGuess(in long maxSum);
-		void roundFinished(in long result, in long maxSum);
+		void roundFinished(in long result, in long maxSum, in names playersPicks, in names winners);
 		void waitForStart();
 	};
 };

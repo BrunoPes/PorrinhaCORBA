@@ -4,17 +4,23 @@ import java.awt.event.*;
 import javax.swing.*;
 
 class ClientUI extends JFrame implements MouseListener, KeyListener, WindowListener {
+	private static final long serialVersionUID = 1L;
 	private Client clientCorba;
 	private ClientThread cliThread;
 
 	private JButton putPicksBtn = new JButton("Escolher");
-	private JButton putGuessBtn = new JButton("Dar palpite");
+	private JButton putGuessBtn = new JButton("Palpite");
 	private JButton connectButton = new JButton("Conectar");
 	private JTextField userName = new JTextField();
 	private JTextField hostName = new JTextField();
 	private JTextField picks = new JTextField();
 	private JTextField guess = new JTextField();
 	private JLabel controlText = new JLabel("Entre em uma sala!");
+	private JLabel player1 = new JLabel("Jogador 1: ");
+	private JLabel player2 = new JLabel("Jogador 2: ");
+	private JLabel player3 = new JLabel("Jogador 3: ");
+	private JLabel player4 = new JLabel("Jogador 4: ");
+	private JLabel maxGuess = new JLabel("Palpite máximo: ");
 
 	public ClientUI(String[] args, int width, int height) {
 		this.cliThread = new ClientThread(args);
@@ -54,7 +60,18 @@ class ClientUI extends JFrame implements MouseListener, KeyListener, WindowListe
         gameFields.setAlignmentX(Component.LEFT_ALIGNMENT);
         gameFields.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
         gameFields.setBackground(Color.WHITE);
-        gameFields.setBounds(0,41,(3*width)/5, 250);
+        gameFields.setBounds(0,41,(3*width)/5, 130);
+
+        JPanel gameLabels = new JPanel();
+        gameLabels.setLayout(new BoxLayout(gameLabels, BoxLayout.Y_AXIS));
+        gameLabels.setBackground(Color.WHITE);
+        gameLabels.setAlignmentX(Component.CENTER_ALIGNMENT);
+        gameLabels.setBounds((3*width)/5+2, 41, (2*width)/5-8, 130);
+        gameLabels.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
+        gameLabels.add(this.player1);
+        gameLabels.add(this.player2);
+        gameLabels.add(this.player3);
+        gameLabels.add(this.player4);
 
         JPanel picksFields = new JPanel();
         picksFields.setLayout(new BoxLayout(picksFields, BoxLayout.X_AXIS));
@@ -79,7 +96,7 @@ class ClientUI extends JFrame implements MouseListener, KeyListener, WindowListe
         JLabel gap = new JLabel("");
         gap.setMaximumSize(new Dimension((3*width)/5, 15));
 
-		Font newFont = (this.controlText.getFont()).deriveFont((float)20);
+		Font newFont = (this.controlText.getFont()).deriveFont((float)18);
 		this.controlText.setFont(newFont);
 		this.controlText.setMaximumSize(new Dimension((3*width)/5, 50));
 		this.controlText.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -97,9 +114,15 @@ class ClientUI extends JFrame implements MouseListener, KeyListener, WindowListe
 		gameFields.add(this.controlText);
         gameFields.add(picksFields);
         gameFields.add(guessFields);
+        this.maxGuess.setAlignmentX(Component.LEFT_ALIGNMENT);
+        gameFields.add(this.maxGuess);
+
+		this.setFieldsEnabled(1, false);
+		this.setFieldsEnabled(2, false);
 
         this.getContentPane().add(connectionFields);
         this.getContentPane().add(gameFields);
+        this.getContentPane().add(gameLabels);
 		this.setVisible(true);
 	}
 
@@ -114,27 +137,75 @@ class ClientUI extends JFrame implements MouseListener, KeyListener, WindowListe
 			this.hostName.setText(host);
 
 			try {
-				// this.clientCorba.setClientUI(this);
-				// this.clientCorba.setClientAndServer(client, host);
 				this.cliThread.configClientCorba(client, host, this);
 				this.cliThread.start();
+				this.setFieldsEnabled(0, false);
+			} catch(org.omg.CosNaming.NamingContextPackage.NotFound notFound) {
+				this.alertShow("Sala não encontrada", "A sala pesquisada não existe. Tente novamente.");
+				this.setFieldsEnabled(0, true);
 			} catch(Exception e) {
 				e.printStackTrace();
 			}
 		}
 	}
 
-	public void controlMessage(int control) {
-		System.out.println("Control in: " + control);
+	private void setFieldsEnabled(int fieldsGroup, boolean enabled) {
+		switch(fieldsGroup) {
+		case 0:
+			this.userName.setEnabled(enabled);
+			this.hostName.setEnabled(enabled);
+			this.connectButton.setEnabled(enabled);
+			break;
+		case 1:
+			this.picks.setEnabled(enabled);
+			this.putPicksBtn.setEnabled(enabled);
+			if(enabled) {
+				this.picks.setText("");
+				this.guess.setText("");
+			}
+			break;
+		case 2:
+			this.guess.setEnabled(enabled);
+			this.putGuessBtn.setEnabled(enabled);
+			break;
+		}
+	}
+
+	public void updateGameLabels(String[] playersLabels, String maxLabel) {
+		if(playersLabels.length == 4) {
+			player1.setText(playersLabels[0]);
+			player2.setText(playersLabels[1]);
+			player3.setText(playersLabels[2]);
+			player4.setText(playersLabels[3]);
+			player1.updateUI();
+			player2.updateUI();
+			player3.updateUI();
+			player4.updateUI();
+		}
+		
+		if(!maxLabel.equals("")) {
+			this.maxGuess.setText(maxLabel);
+			this.maxGuess.updateUI();
+		}
+	}
+	
+	public void alertShow(String title, String msg) {
+		JOptionPane.showMessageDialog(this, msg, title, JOptionPane.WARNING_MESSAGE);
+	}
+
+	public void controlMessage(int control, int value) {
 		switch(control) {
 			case 0:
-				this.controlText.setText("Esperando a partida comeÃ§ar...");
+				this.controlText.setText("Espere a partida começar");
 				break;
 			case 1:
 				this.controlText.setText("Escolha seus palitos!");
+				this.setFieldsEnabled(1, true);
 				break;
 			case 2:
-				this.controlText.setText("DÃª o seu palpite!");
+				this.updateGameLabels(new String[]{""}, "Palpite máximo: " + value);
+				this.controlText.setText("Dê seu palpite!");
+				this.setFieldsEnabled(2, true);
 				break;
 		}
 		this.controlText.updateUI();
@@ -144,42 +215,58 @@ class ClientUI extends JFrame implements MouseListener, KeyListener, WindowListe
 	public void tellNumberOfPicks(ServerPorrinha server, int myPicks) {
 		try {
 			int picksNum = Integer.valueOf(this.picks.getText());
-			if(picksNum > myPicks) {
-				this.controlText.setText("VocÃª sÃ³ tem " + myPicks + " palitos");
+			if(picksNum > myPicks || picksNum < 0) {
+				this.alertShow("Valor inválido", "Você só tem " + myPicks + " palitos");
 				this.controlText.updateUI();
 			} else {
+				this.controlText.setText("Aguardando outros jogadores");
+				this.setFieldsEnabled(1, false);
 				server.putNumberOfPicks(this.userName.getText(), picksNum);
 			}
 		} catch(NumberFormatException e) {
-			String msg = "Escreva apenas nÃºmeros inteiros de 0 a " + myPicks;
-			JOptionPane.showMessageDialog(this, null, msg, JOptionPane.WARNING_MESSAGE);
+			this.alertShow("Valor inválido", "Escreva apenas: Inteiros de 0 a " + myPicks);
 		}
 	}
 
 	public void tellResultGuess(ServerPorrinha server, int maxPicks) {
 		try {
 			int lastGuess = Integer.valueOf(this.guess.getText());
-			if(lastGuess > maxPicks) {
-				this.controlText.setText("Maior palpite possÃ­vel Ã©: " + maxPicks);
+			if(lastGuess > maxPicks || lastGuess < 0) {
+				this.alertShow("Palpite inválido", "Maior palpite possível é: " + maxPicks);
 			} else {
+				this.controlText.setText("Aguardando Resultado");
 				this.clientCorba.setLastGuess(lastGuess);
+				this.setFieldsEnabled(2, false);
 				server.putResultGuess(this.clientCorba.getName(), lastGuess);
-				this.controlText.setText("Aguardando Resultado...");
 			}
 			this.controlText.updateUI();
 		} catch(NumberFormatException e) {
-			String msg = "Escreva apenas nÃºmeros inteiros de 0 a " + maxPicks;
-			JOptionPane.showMessageDialog(this, null, msg, JOptionPane.WARNING_MESSAGE);
+			String msg = "Escreva apenas números inteiros de 0 a " + maxPicks;
+			this.alertShow("Palpite Inválido", msg);
 		}
 	}
 
-	public void roundFinished(int result, int maxSum) {
-		this.controlMessage(1);
+	public void roundFinished(int result, int maxSum, String[] playersPicks, String[] winners, boolean iDidWin) {
+		this.updateGameLabels(playersPicks, "Palpite máximo: " + maxSum);
+		
+		String msg = "Os vencedores dessa rodadam foram:";
+		for(String winnerLabel : winners) {
+			msg += "\n" + winnerLabel;
+		}
+		System.out.println(msg);
+		// this.alertShow("Fim da Rodada", msg);
+
+		if(iDidWin) {
+			this.setFieldsEnabled(1, false);
+			this.setFieldsEnabled(2, false);
+		} else {
+			this.controlMessage(1, 0);
+		}
 	}
 
 	/** Listeners **/
 	public void windowClosing(WindowEvent e) {
-		System.out.println("Closing Window");
+		//System.out.println("Closing Window");
         // if(!this.connect.isEnabled()) {
         //     System.out.println("Closing Window");
         //     this.client.closeConnection(this.id);
@@ -208,20 +295,18 @@ class ClientUI extends JFrame implements MouseListener, KeyListener, WindowListe
 					this.clientCorba.getMaxPicks()
 				};
 
-				System.out.println("Entering Switch!");
 				switch(button.getText()) {
 					case "Conectar":
-						this.connectToServer(); return;
+						this.connectToServer();
+						break;
 					case "Escolher":
 						this.tellNumberOfPicks(server, picksArray[0]);
 						break;
-					case "Dar palpite":
+					case "Palpite":
 						this.tellResultGuess(server, picksArray[1]);
 						break;
 					default: break;
 				}
-
-				System.out.println("Leaving Switch!");
 			}
         } catch(Exception exc) {
         	exc.printStackTrace();
@@ -252,6 +337,6 @@ class ClientUI extends JFrame implements MouseListener, KeyListener, WindowListe
     	// 	}
     	// } else {
 		// }
-    	new ClientUI(args, 450, 300);
+    	new ClientUI(args, 450, 200);
     }
 }

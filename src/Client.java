@@ -18,16 +18,18 @@ class ClientThread extends Thread {
 		return this.clientCorba;
 	}
 
-	public void configClientCorba(String client, String server, ClientUI userInterface) {
+	public void configClientCorba(String client, String server, ClientUI userInterface) throws Exception {
 		this.clientName = client;
 		this.serverName = server;
 		this.clientUI = userInterface;
+		this.clientCorba.setServer(serverName);
+		this.clientCorba.setClient(this.clientName);
+		this.clientCorba.setClientUI(this.clientUI);
 	}
 
 	public void run() {
 		try {
-			this.clientCorba.setClientUI(this.clientUI);
-			this.clientCorba.setClientAndServer(this.clientName, this.serverName);
+			this.clientCorba.startConnection();
 			System.out.println("Rodando e operante");
 		} catch(Exception e) {
 			e.printStackTrace();
@@ -77,6 +79,7 @@ public class Client extends ClientPorrinhaPOA {
 	public void setServer(String serverName) throws Exception {
 		org.omg.CORBA.Object serverPointer = this.namingService.resolve(new NameComponent[]{new NameComponent(serverName, "")});
 		this.server = ServerPorrinhaHelper.narrow(serverPointer);
+		System.out.println("Client connected to server!");
 	}
 
 	public void setClientAndServer(String clientName, String serverName) throws Exception {
@@ -92,7 +95,6 @@ public class Client extends ClientPorrinhaPOA {
 
 	public void startConnection() throws Exception {
 		this.rootPOA.the_POAManager().activate();
-		System.out.println("Client connected to server!");
 		this.server.registerClient(this.myName);
 		this.orb.run();
 	}
@@ -124,26 +126,41 @@ public class Client extends ClientPorrinhaPOA {
 	// CORBA Interface Protocol Methods
 	public void waitForStart() {
 		System.out.println("Wait start");
-		this.clientUI.controlMessage(0);
+		this.clientUI.controlMessage(0, 0);
+	}
+	
+	public void tellPlayersNames(String[] names, int length) {
+		try {
+			System.out.println("Names!!!  " + names[0] + "Length: " + length);
+			for(int i=0; i < length; i++) {
+				System.out.println("Player: " + names[i] + "  Id: " + i);
+			}
+			this.clientUI.updateGameLabels(names, "Palpite máximo: " + (length*3));
+		} catch(Exception e) {
+			e.printStackTrace();
+		}
 	}
 
 	public void tellNumberOfPicks() {
 		System.out.println("Tell picks");
-		this.clientUI.controlMessage(1);
+		this.clientUI.controlMessage(1, 0);
 	}
 
 	public void tellResultGuess(int maxSum) {
 		this.maxPicksSum = maxSum;
 		System.out.println("Tell Guess!");
-		this.clientUI.controlMessage(2);
+		this.clientUI.controlMessage(2, maxSum);
 	}
 
-	public void roundFinished(int result, int maxSum) {
-		System.out.println("Finish");
+	public void roundFinished(int result, int maxSum, String[] playersPicks, String[] winners) {
+		System.out.println("Finish! Result: " + result);
 		this.maxPicksSum = maxSum;
-		if(this.lastGuess == result) this.myPicks--;
-
-		this.clientUI.roundFinished(result, maxSum);
+		
+		if(this.lastGuess == result) {
+			this.myPicks--;
+		}
+ 	
+		this.clientUI.roundFinished(result, maxSum, playersPicks, winners, (this.myPicks == 0));
 	}
 
 	public static void main(String args[]) {
