@@ -20,7 +20,13 @@ class ClientUI extends JFrame implements MouseListener, KeyListener, WindowListe
 	private JLabel player2 = new JLabel("Jogador 2: ");
 	private JLabel player3 = new JLabel("Jogador 3: ");
 	private JLabel player4 = new JLabel("Jogador 4: ");
-	private JLabel maxGuess = new JLabel("Palpite m·ximo: ");
+	private JLabel[] playersLbls = {
+		new JLabel("Jogador 1: "),
+		new JLabel("Jogador 2: "),
+		new JLabel("Jogador 3: "),
+		new JLabel("Jogador 4: ")
+	};
+	private JLabel maxGuess = new JLabel("Palpite m√°ximo: ");
 
 	public ClientUI(String[] args, int width, int height) {
 		this.cliThread = new ClientThread(args);
@@ -68,10 +74,12 @@ class ClientUI extends JFrame implements MouseListener, KeyListener, WindowListe
         gameLabels.setAlignmentX(Component.CENTER_ALIGNMENT);
         gameLabels.setBounds((3*width)/5+2, 41, (2*width)/5-8, 130);
         gameLabels.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
-        gameLabels.add(this.player1);
-        gameLabels.add(this.player2);
-        gameLabels.add(this.player3);
-        gameLabels.add(this.player4);
+		for(int i=0; i<this.playersLbls.length; i++)
+			gameLabels.add(this.playersLbls[i]);
+        // gameLabels.add(this.player1);
+        // gameLabels.add(this.player2);
+        // gameLabels.add(this.player3);
+        // gameLabels.add(this.player4);
 
         JPanel picksFields = new JPanel();
         picksFields.setLayout(new BoxLayout(picksFields, BoxLayout.X_AXIS));
@@ -100,6 +108,8 @@ class ClientUI extends JFrame implements MouseListener, KeyListener, WindowListe
 		this.controlText.setFont(newFont);
 		this.controlText.setMaximumSize(new Dimension((3*width)/5, 50));
 		this.controlText.setAlignmentX(Component.CENTER_ALIGNMENT);
+		this.maxGuess.setMaximumSize(new Dimension(((3*width)/5)-20, 50));
+        this.maxGuess.setAlignmentX(Component.CENTER_ALIGNMENT);
 
 		picksFields.add(new JLabel("  "));
         picksFields.add(new JLabel("Palitos    "));
@@ -114,7 +124,6 @@ class ClientUI extends JFrame implements MouseListener, KeyListener, WindowListe
 		gameFields.add(this.controlText);
         gameFields.add(picksFields);
         gameFields.add(guessFields);
-        this.maxGuess.setAlignmentX(Component.LEFT_ALIGNMENT);
         gameFields.add(this.maxGuess);
 
 		this.setFieldsEnabled(1, false);
@@ -141,7 +150,7 @@ class ClientUI extends JFrame implements MouseListener, KeyListener, WindowListe
 				this.cliThread.start();
 				this.setFieldsEnabled(0, false);
 			} catch(org.omg.CosNaming.NamingContextPackage.NotFound notFound) {
-				this.alertShow("Sala n„o encontrada", "A sala pesquisada n„o existe. Tente novamente.");
+				this.alertShow("Sala n√£o encontrada", "A sala pesquisada n√£o existe. Tente novamente.");
 				this.setFieldsEnabled(0, true);
 			} catch(Exception e) {
 				e.printStackTrace();
@@ -171,24 +180,32 @@ class ClientUI extends JFrame implements MouseListener, KeyListener, WindowListe
 		}
 	}
 
-	public void updateGameLabels(String[] playersLabels, String maxLabel) {
-		if(playersLabels.length == 4) {
-			player1.setText(playersLabels[0]);
-			player2.setText(playersLabels[1]);
-			player3.setText(playersLabels[2]);
-			player4.setText(playersLabels[3]);
-			player1.updateUI();
-			player2.updateUI();
-			player3.updateUI();
-			player4.updateUI();
+	public void setMyLabelColor(int labelIndex, Color color) {
+		System.out.println("Update Color from Label " + labelIndex);
+		JLabel label = this.playersLbls[labelIndex];
+		label.setBackground(color);
+		label.setForeground(color);
+		label.updateUI();
+	}
+
+	public void updateGameLabels(String[] playersLabels, String maxLabel, int indexLabel) {
+		if(indexLabel >= 0) {
+			this.setMyLabelColor(indexLabel, Color.RED.darker());
 		}
-		
+
+		if(playersLabels.length == 4) {
+			for(int i=0; i < this.playersLbls.length; i++) {
+				this.playersLbls[i].setText(playersLabels[i]);
+				this.playersLbls[i].updateUI();
+			}
+		}
+
 		if(!maxLabel.equals("")) {
 			this.maxGuess.setText(maxLabel);
 			this.maxGuess.updateUI();
 		}
 	}
-	
+
 	public void alertShow(String title, String msg) {
 		JOptionPane.showMessageDialog(this, msg, title, JOptionPane.WARNING_MESSAGE);
 	}
@@ -196,15 +213,15 @@ class ClientUI extends JFrame implements MouseListener, KeyListener, WindowListe
 	public void controlMessage(int control, int value) {
 		switch(control) {
 			case 0:
-				this.controlText.setText("Espere a partida comeÁar");
+				this.controlText.setText("Espere a partida come√ßar");
 				break;
 			case 1:
 				this.controlText.setText("Escolha seus palitos!");
 				this.setFieldsEnabled(1, true);
 				break;
 			case 2:
-				this.updateGameLabels(new String[]{""}, "Palpite m·ximo: " + value);
-				this.controlText.setText("DÍ seu palpite!");
+				this.updateGameLabels(new String[]{""}, "Palpite m√°ximo: " + value, -1);
+				this.controlText.setText("D√™ seu palpite!");
 				this.setFieldsEnabled(2, true);
 				break;
 		}
@@ -216,15 +233,15 @@ class ClientUI extends JFrame implements MouseListener, KeyListener, WindowListe
 		try {
 			int picksNum = Integer.valueOf(this.picks.getText());
 			if(picksNum > myPicks || picksNum < 0) {
-				this.alertShow("Valor inv·lido", "VocÍ sÛ tem " + myPicks + " palitos");
+				this.alertShow("Valor inv√°lido", "Voc√™ s√≥ tem " + myPicks + " palitos");
 				this.controlText.updateUI();
 			} else {
-				this.controlText.setText("Aguardando outros jogadores");
+				this.controlText.setText("Aguarde a sua vez!");
 				this.setFieldsEnabled(1, false);
 				server.putNumberOfPicks(this.userName.getText(), picksNum);
 			}
 		} catch(NumberFormatException e) {
-			this.alertShow("Valor inv·lido", "Escreva apenas: Inteiros de 0 a " + myPicks);
+			this.alertShow("Valor inv√°lido", "Escreva apenas: Inteiros de 0 a " + myPicks);
 		}
 	}
 
@@ -232,7 +249,7 @@ class ClientUI extends JFrame implements MouseListener, KeyListener, WindowListe
 		try {
 			int lastGuess = Integer.valueOf(this.guess.getText());
 			if(lastGuess > maxPicks || lastGuess < 0) {
-				this.alertShow("Palpite inv·lido", "Maior palpite possÌvel È: " + maxPicks);
+				this.alertShow("Palpite inv√°lido", "Maior palpite poss√≠vel √©: " + maxPicks);
 			} else {
 				this.controlText.setText("Aguardando Resultado");
 				this.clientCorba.setLastGuess(lastGuess);
@@ -241,14 +258,14 @@ class ClientUI extends JFrame implements MouseListener, KeyListener, WindowListe
 			}
 			this.controlText.updateUI();
 		} catch(NumberFormatException e) {
-			String msg = "Escreva apenas n˙meros inteiros de 0 a " + maxPicks;
-			this.alertShow("Palpite Inv·lido", msg);
+			String msg = "Escreva apenas n√∫meros inteiros de 0 a " + maxPicks;
+			this.alertShow("Palpite Inv√°lido", msg);
 		}
 	}
 
 	public void roundFinished(int result, int maxSum, String[] playersPicks, String[] winners, boolean iDidWin) {
-		this.updateGameLabels(playersPicks, "Palpite m·ximo: " + maxSum);
-		
+		this.updateGameLabels(playersPicks, "Palpite m√°ximo: " + maxSum, -1);
+
 		String msg = "Os vencedores dessa rodadam foram:";
 		for(String winnerLabel : winners) {
 			msg += "\n" + winnerLabel;

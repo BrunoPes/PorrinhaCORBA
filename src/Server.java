@@ -3,6 +3,7 @@ import org.omg.CosNaming.*;
 import org.omg.CORBA.*;
 import org.omg.PortableServer.*;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class Server extends ServerPorrinhaPOA {
 	private Map<String, Integer> playedPicks = new HashMap<String, Integer>();
@@ -11,9 +12,11 @@ public class Server extends ServerPorrinhaPOA {
 	private Map<String, Integer> idClients = new HashMap<String, Integer>();
 	private Map<String, ClientPorrinha> clientsObjects = new HashMap<String, ClientPorrinha>();
 	private int maxSum;
-	private int round = 0;
 	private int totalPlayers;
 	private int playersToWin;
+	private int round = 0;
+	private int turnPlayer = 0;
+	private int lastPlayed = 0;
 	private String theWinner = "";
 	private NamingContext namingService;
 
@@ -33,11 +36,34 @@ public class Server extends ServerPorrinhaPOA {
 		this.namingService.rebind(new NameComponent[]{new NameComponent(serverName, "")}, objRef);
 
 		rootPOA.the_POAManager().activate();
-		System.out.println("Servidor " + serverName +" Lançado...");
+		System.out.println("Servidor " + serverName +" LanÃ§ado...");
 
 		orb.run();
 	}
 
+	public boolean isPlayerIngame(int playerID) {
+		String name = this.getReserveMap(this.idClients).get(playerID);
+		return this.clientsPicks.get(name) > 0;
+	}
+
+	public String nextPlayer(int curPlayer) {
+		// System.out.println("Atual: " + curPlayer);
+		int next = (curPlayer + 1) < this.totalPlayers ? (curPlayer + 1) : 0;
+
+		while(!this.isPlayerIngame(next)) {
+			if(++next > (this.totalPlayers - 1)) next = 0;
+			// System.out.println("Next Step: " + next);
+		}
+
+		return this.getReserveMap(this.idClients).get(next);
+	}
+
+	public HashMap<Integer, String> getReserveMap(Map<String, Integer> map) {
+		return (HashMap<Integer, String>) map.entrySet().stream()
+				.collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
+	}
+
+	// CORBA Interface Protocol Methods
 	public void registerClient(String clientName) {
 		try {
 			NameComponent[] clientNameComp = {new NameComponent(clientName, "")};
@@ -51,7 +77,7 @@ public class Server extends ServerPorrinhaPOA {
 				if(this.clientsObjects.size() == this.totalPlayers) {
 					String[] names = new String[this.totalPlayers];
 					this.maxSum = this.totalPlayers * 3;
-					
+
 					for(Map.Entry<String, Integer> entry : this.idClients.entrySet()) {
 						names[entry.getValue()] = entry.getKey() + ": " + 3;
 					}
@@ -74,21 +100,28 @@ public class Server extends ServerPorrinhaPOA {
 	public void putNumberOfPicks(String clientName, int picks) {
 		this.playedPicks.put(clientName, picks);
 
-		if(this.playedPicks.size() == this.playersToWin) {
-			for(Map.Entry<String, ClientPorrinha> entry : this.clientsObjects.entrySet()) {
-				String playerName = entry.getKey();
-				ClientPorrinha client = entry.getValue();
-
-				if(this.clientsPicks.get(playerName) > 0)
-					client.tellResultGuess(this.maxSum);
+		if(this.playedPicks.size() == this.playersToWin && this.playersToWin > 1) {
+			while(!this.isPlayerIngame(this.turnPlayer)) {
+				if(++this.turnPlayer > (this.totalPlayers - 1))
+					this.turnPlayer = 0;
 			}
+			String name = this.getReserveMap(this.idClients).get(this.turnPlayer);
+			this.lastPlayed = this.turnPlayer++;
+			if(this.turnPlayer > (this.totalPlayers-1)) this.turnPlayer = 0;
+
+			this.clientsObjects.get(name).tellResultGuess(this.maxSum);
 		}
 	}
 
 	public void putResultGuess(String clientName, int guess) {
+		System.out.println(clientName + " GUESS: " + guess);
 		this.guessedPicks.put(clientName, guess);
 
-		if(this.guessedPicks.size() == this.playersToWin) {
+		if(this.guessedPicks.size() < this.playersToWin) {
+			String name = this.nextPlayer(this.lastPlayed);
+			if(++this.lastPlayed > (this.totalPlayers-1)) this.lastPlayed = 0;
+			this.clientsObjects.get(name).tellResultGuess(this.maxSum);
+		} else {
 			this.maxSum = 0;
 			int totalSum = 0;
 			String[] playersPicks = {"", "", "", ""};
@@ -105,12 +138,12 @@ public class Server extends ServerPorrinhaPOA {
 				String playerName = (String) entry.getKey();
 
 				/**PALPITE CORRETO**/
-				if(guessed == totalSum) { 
+				if(guessed == totalSum) {
 					System.out.println(playerName + " ACERTOU!");
 					Integer newPicks = ((int)this.clientsPicks.get(playerName)) - 1;
 					this.clientsPicks.put(playerName, newPicks);
 					winners.add(playerName);
-					if(picks == 0) this.playersToWin--;
+					if(newPicks == 0) this.playersToWin--;
 				}
 
 				int picks = this.clientsPicks.get(playerName);

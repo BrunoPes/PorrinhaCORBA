@@ -86,7 +86,6 @@ public class Client extends ClientPorrinhaPOA {
 		this.setServer(serverName);
 		this.setClient(clientName);
 		this.startConnection();
-		// this.server.registerClient(clientName);
 	}
 
 	public void setClientUI(ClientUI userInterface) {
@@ -128,14 +127,15 @@ public class Client extends ClientPorrinhaPOA {
 		System.out.println("Wait start");
 		this.clientUI.controlMessage(0, 0);
 	}
-	
+
 	public void tellPlayersNames(String[] names, int length) {
 		try {
 			System.out.println("Names!!!  " + names[0] + "Length: " + length);
+			int index = 0;
 			for(int i=0; i < length; i++) {
-				System.out.println("Player: " + names[i] + "  Id: " + i);
+				if(LabelsHelper.getName(names[i]).equals(this.myName)) index = i;
 			}
-			this.clientUI.updateGameLabels(names, "Palpite máximo: " + (length*3));
+			this.clientUI.updateGameLabels(names, "Palpite máximo: " + (length*3), index);
 		} catch(Exception e) {
 			e.printStackTrace();
 		}
@@ -155,12 +155,12 @@ public class Client extends ClientPorrinhaPOA {
 	public void roundFinished(int result, int maxSum, String[] playersPicks, String[] winners) {
 		System.out.println("Finish! Result: " + result);
 		this.maxPicksSum = maxSum;
-		
-		if(this.lastGuess == result) {
+
+		if(this.lastGuess == result && this.myPicks > 0) {
 			this.myPicks--;
 		}
- 	
-		this.clientUI.roundFinished(result, maxSum, playersPicks, winners, (this.myPicks == 0));
+
+		this.clientUI.roundFinished(result, maxSum, playersPicks, winners, (this.myPicks <= 0));
 	}
 
 	public static void main(String args[]) {
