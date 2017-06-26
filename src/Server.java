@@ -1,4 +1,4 @@
-import Porrinha.*;
+﻿import Porrinha.*;
 import org.omg.CosNaming.*;
 import org.omg.CORBA.*;
 import org.omg.PortableServer.*;
@@ -143,7 +143,10 @@ public class Server extends ServerPorrinhaPOA {
 					Integer newPicks = ((int)this.clientsPicks.get(playerName)) - 1;
 					this.clientsPicks.put(playerName, newPicks);
 					winners.add(playerName);
-					if(newPicks == 0) this.playersToWin--;
+					if(newPicks == 0) {
+						this.playersToWin--;
+						if(theWinner.equals("")) theWinner = playerName;
+					}
 				}
 
 				int picks = this.clientsPicks.get(playerName);
